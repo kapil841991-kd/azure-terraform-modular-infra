@@ -1,7 +1,7 @@
 ############################################
 # GLOBAL LB VALUES
 ############################################
-location            = "Central India"
+location            = "East US"
 resource_group_name = "rg-dev"
 lb_name             = "todo-lb"
 public_ip_name      = "lb-public-ip"
@@ -13,7 +13,7 @@ backend_pool_name   = "backend-pool"
 rgs = {
   rg1 = {
     name       = "rg-dev"
-    location   = "Central India"
+    location   = "East US"
     managed_by = "teamA-devops"
     tags = {
       environment = "development"
@@ -28,7 +28,7 @@ rgs = {
 vnets = {
   vnet1 = {
     name                = "vnet-dev"
-    location            = "Central India"
+    location            = "East US"
     resource_group_name = "rg-dev"
     address_space       = ["10.0.0.0/16"]
   }
@@ -43,14 +43,14 @@ subnets = {
     address_prefix      = "10.0.1.0/24"
     resource_group_name = "rg-dev"
     vnet_name           = "vnet-dev"
-    location            = "Central India"
+    location            = "East US"
   }
   backend = {
     name                = "backend"
     address_prefix      = "10.0.2.0/24"
     resource_group_name = "rg-dev"
     vnet_name           = "vnet-dev"
-    location            = "Central India"
+    location            = "East US"
   }
     AzureBastionSubnet = {
     name                = "AzureBastionSubnet"   # ⚠ NAME CHANGE MAT KARNA
@@ -67,13 +67,13 @@ subnets = {
 nics = {
   nic-frontend = {
     name                = "nic-frontend"
-    location            = "Central India"
+    location            = "East US"
     resource_group_name = "rg-dev"
     subnet_key          = "frontend"
   }
   nic-backend = {
     name                = "nic-backend"
-    location            = "Central India"
+    location            = "East US"
     resource_group_name = "rg-dev"
     subnet_key          = "backend"
   }
@@ -85,7 +85,7 @@ nics = {
 vms = {
   frontend_vm = {
     name                = "vm-frontend"
-    location            = "Central India"
+    location            = "East US"
     resource_group_name = "rg-dev"
     nic_key             = "nic-frontend"
     size                = "Standard_B1s"
@@ -94,7 +94,7 @@ vms = {
   }
   backend_vm = {
     name                = "vm-backend"
-    location            = "Central India"
+    location            = "East US"
     resource_group_name = "rg-dev"
     nic_key             = "nic-backend"
     size                = "Standard_B1s"
