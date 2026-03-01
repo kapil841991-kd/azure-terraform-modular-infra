@@ -25,7 +25,7 @@ stages:
             backendAzureRmResourceGroupName: 'rg-storage'
             backendAzureRmStorageAccountName: 'backendstorage2026'
             backendAzureRmContainerName: 'tfstate'
-            backendAzureRmKey: 'log/dev.terraform.tfstate'
+            backendAzureRmKey: 'dev.terraform.tfstate'
 
         - task: TerraformTask@5
           displayName: Terraform Validate
@@ -136,7 +136,7 @@ stages:
           backendAzureRmResourceGroupName: 'rg-storage'
           backendAzureRmStorageAccountName: 'backendstorage2026'
           backendAzureRmContainerName: 'tfstate'
-          backendAzureRmKey: 'log/dev.terraform.tfstate'
+          backendAzureRmKey: 'dev.terraform.tfstate'
 
       - task: TerraformTask@5
         displayName: Terraform Apply
