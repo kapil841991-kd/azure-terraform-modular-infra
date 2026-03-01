@@ -78,3 +78,24 @@ module "bastion" {
     module.nsg
   ]
 }
+
+
+###############################################
+# SQL MODULE
+###############################################
+module "sql" {
+  source          = "../../modules/sql"
+  sql_server_name = "sql-dev-0804"
+  sql_db_name     = "sql-db-dev-0804"
+  rg_name         = "rg-dev"
+  location        = "Central India"
+  admin_username  = "admin123"
+  admin_password  = "P@ssw01rd@123"
+  max_size_gb     = 2
+
+  tags = {
+    environment = "dev"
+  }
+
+  depends_on = [module.rg]
+}
