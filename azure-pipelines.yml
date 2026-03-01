@@ -1,0 +1,148 @@
+trigger: none
+
+pool: azure-pool
+
+stages:
+  - stage: Terraform
+    displayName: Terraform Install Init Validate Plan
+    jobs:
+      - job: InfraCheck
+        steps:
+
+        - task: TerraformInstaller@1
+          displayName: Terraform Install
+          inputs:
+            terraformVersion: 'latest'
+
+        - task: TerraformTask@5
+          displayName: Terraform Init
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/Env/dev'
+            backendServiceArm: 'azure-connection'
+            backendAzureRmOverrideSubscriptionID: '0e8a06a6-509d-4160-9fd1-a6915793c2bd'
+            backendAzureRmResourceGroupName: 'rg-storage'
+            backendAzureRmStorageAccountName: 'backendstorage2026'
+            backendAzureRmContainerName: 'tfstate'
+            backendAzureRmKey: 'log/dev.terraform.tfstate'
+
+        - task: TerraformTask@5
+          displayName: Terraform Validate
+          inputs:
+            provider: 'azurerm'
+            command: 'validate'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/Env/dev'
+
+        - task: TerraformTask@5
+          displayName: Terraform Plan
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/Env/dev'
+            environmentServiceNameAzureRM: 'azure-connection'
+
+  - stage: SecurityScanning
+    displayName: Security Sacnning
+    dependsOn: Terraform
+    jobs:
+      - job: tflint
+        displayName: tflint
+        steps:
+
+        - task: CmdLine@2
+          displayName: tflint
+          continueOnError: true
+          inputs:
+            script: 'tflint --recursive /f junit > tflint-report.xml'
+            workingDirectory: '$(System.DefaultWorkingDirectory)'
+        - task: PublishTestResults@2
+          displayName: tflint-report publish
+          inputs:
+            testResultsFormat: 'JUnit'
+            testResultsFiles: 'tflint-report.xml'
+            testRunTitle: 'tflint-scan'
+
+      - job: checkov
+        dependsOn: tflint
+        displayName: checkov
+        steps:
+        - task: CmdLine@2
+          displayName: checkov
+          continueOnError: true
+          inputs:
+            script: 'checkov -d . -o junitxml > checkov-out.xml'
+            workingDirectory: '$(System.DefaultWorkingDirectory)'
+        - task: PublishTestResults@2
+          displayName: checkov-publish
+          inputs:
+            testResultsFormat: 'JUnit'
+            testResultsFiles: 'checkov-out.xml'
+            testRunTitle: 'checkov'
+
+  - stage: costEstimation
+    displayName: Cost Estimation
+    jobs:
+      - job: infracost
+        displayName: infracost
+        steps:
+        - task: CmdLine@2
+          displayName: infracost
+          inputs:
+            script: 'infracost breakdown --path . --format=html > cost-out.html'
+            workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+        - task: PublishBuildArtifacts@1
+          displayName: publish cost
+          inputs:
+            PathtoPublish: '$(System.DefaultWorkingDirectory)/cost-out.html'
+            ArtifactName: 'costing'
+            publishLocation: 'Container'
+
+  - stage: ManualApproval
+    displayName: Manual Approval Before Apply
+    dependsOn:
+      - Terraform
+      - SecurityScanning
+      - costEstimation
+    jobs:
+      - job: Approval
+        displayName: Await Approval
+        pool: server
+        steps:
+        - task: ManualValidation@0
+          timeoutInMinutes: 60
+          inputs:
+            notifyUsers: |
+              kdsrivastava91@gmail.com
+            instructions: 'Please review Terraform Plan, Security & Cost reports before approving.'
+            onTimeout: reject
+
+  - stage: TerraformApply
+    displayName: Terraform Apply
+    dependsOn: ManualApproval
+    jobs:
+    - job: Apply
+      steps:
+
+      - task: TerraformTask@5
+        displayName: Terraform Init
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/Env/dev'
+          backendServiceArm: 'azure-connection'
+          backendAzureRmOverrideSubscriptionID: '0e8a06a6-509d-4160-9fd1-a6915793c2bd'
+          backendAzureRmResourceGroupName: 'rg-storage'
+          backendAzureRmStorageAccountName: 'backendstorage2026'
+          backendAzureRmContainerName: 'tfstate'
+          backendAzureRmKey: 'log/dev.terraform.tfstate'
+
+      - task: TerraformTask@5
+        displayName: Terraform Apply
+        inputs:
+          provider: 'azurerm'
+          command: 'apply'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/Env/dev'
+          commandOptions: '-auto-approve'
+          environmentServiceNameAzureRM: 'azure-connection'
